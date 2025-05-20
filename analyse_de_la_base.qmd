@@ -1,0 +1,1407 @@
+---
+title: "Résumé statistique et analyses uni et bi-variées de la base"
+author: "MATTE Angelo, PITTION Eli"
+date: "`r Sys.Date()`"
+format:
+  html:
+    embed-resources: true
+    theme: yeti
+    smooth-scroll: true
+    fontsize: 0.85em
+    toc: true
+    number-sections: true
+    toc-depth: 3
+    code-fold: true
+    editor: visual
+---
+
+Cette synthèse présentes les résultats de l’analyse visuelle de 309 affiches conservées entre les fonds des Archives nationales de France à Paris et la bibliothèque du Trinity College à Dublin. Cette étude a pour objectif l’examen des caractéristiques techniques et des altérations des affiches observées afin de déterminer la possible corrélation entre typologie d’affiche, mode d’affichage et altérations en présence.
+
+```{r}
+#| label: init algo
+#| message: false
+#| warning: false
+library(plotly) ## Pour faire des plots interactifs
+library(knitr)
+
+data_brute <- read.csv2("data_brute/data_brute_final.csv")
+data_brute$Fonds[data_brute$Fonds == "Ellenberger (CP/78AJ/67)"] <- "Ellenberger"
+
+n_doc_par_fonds <- data.frame(Fonds = unique(data_brute$Fonds),
+                              nb_doc = tapply(data_brute$id.unique,
+                                              data_brute$Fonds,
+                                              FUN = length))
+
+# encrassement
+encrassement <- data_brute[, c("id.unique",
+                                "Fonds",
+                                "Encrassement")]
+
+ss_encrassement <- encrassement[encrassement$Encrassement == "sans" , ]
+avc_encrassement <- encrassement[encrassement$Encrassement %in% c("oui",
+                                                                   "verso",
+                                                                   "recto-verso",
+                                                                   "recto") , ]
+
+# depot
+depot <- data_brute[, c("id.unique",
+                        "Fonds",
+                        "dépôt")]
+
+ss_depot <- depot[depot$dépôt == "0" , ]
+avc_depot <- depot[depot$dépôt == "oui" , ]
+
+
+# taches
+taches<- data_brute[, c("id.unique",
+                        "Fonds",
+                        "Taches")]
+
+ss_tache <- taches[taches$Taches == "sans" , ]
+avc_tache <- taches[taches$Taches == "oui" , ]
+
+
+# aureoles
+aureole <- data_brute[, c("id.unique",
+                        "Fonds",
+                        "auréole")]
+
+
+ss_aureole <- aureole[aureole$auréole == "0" , ]
+avc_aureole <- aureole[aureole$auréole == "oui" , ]
+
+# trace de colle
+
+trace_colle <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "Traces.de.colle")]
+
+ss_trace_colle <- trace_colle[trace_colle$Traces.de.colle == "sans" , ]
+avc_trace_colle <- trace_colle[trace_colle$Traces.de.colle %in% c("recto-verso",
+                                                                  "verso",
+                                                                  "recto") , ]
+
+lacunes <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "Lacunes")]
+
+
+# lacunes
+ss_lacunes <- lacunes[lacunes$Lacunes == "sans" , ]
+avc_lacunes <- lacunes[lacunes$Lacunes %in% c("oui",
+                                              "comblées",
+                                              "consolidées") , ]
+
+# perforation
+perforation <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "Perforation")]
+
+ss_perforation <- perforation[perforation$Perforation == "" , ]
+avc_perforation <- perforation[perforation$Perforation == "oui" , ]
+
+# déchirure
+
+dechirure <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "Déchirures")]
+
+
+
+ss_dechirure <- dechirure[dechirure$Déchirures == "sans" , ]
+avc_dechirure <- dechirure[dechirure$Déchirures == "oui" , ]
+
+# plis
+plis <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "Présence.de.plis")]
+
+
+ss_plis <- plis[plis$Présence.de.plis == "0" , ]
+avc_plis <- plis[plis$Présence.de.plis == "oui" , ]
+
+# gondolement
+gondolement <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "gondolements..affichage.")]
+
+
+ss_gondolement <- gondolement[gondolement$gondolements..affichage. == "sans" , ]
+avc_gondolement <- gondolement[gondolement$gondolements..affichage. == "oui" , ]
+
+# delamination
+delamination <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "délamination")]
+
+ss_delamination <- delamination[delamination$délamination == "sans" , ]
+avc_delamination <- delamination[delamination$délamination == "oui" , ]
+
+# coupure
+coupure <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "Coupure")]
+
+ss_coupure <- coupure[coupure$Coupure == "0" , ]
+avc_coupure <- coupure[coupure$Coupure == "oui" , ]
+
+# abrasion
+abrasion <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "abrasion")]
+
+ss_abrasion <- abrasion[abrasion$abrasion == "0" , ]
+avc_abrasion <- abrasion[abrasion$abrasion == "oui" , ]
+
+
+# migration d'encre
+fuse <- data_brute[, c("id.unique",
+                              "Fonds",
+                              "média.qui.fuse")]
+
+ss_fuse <- fuse[fuse$média.qui.fuse == "0" , ]
+avc_fuse <- fuse[fuse$média.qui.fuse == "oui" , ]
+
+```
+
+# Présentation de la base
+
+## Nombre de documents par fonds
+
+```{r}
+                    
+plot_ly(n_doc_par_fonds,
+        x = ~Fonds,
+        y = ~nb_doc,
+        color = ~Fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents par fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+```
+
+## Mode d'affichage
+
+```{r}
+mode_affichage <- rbind(data_brute$Mode.d.affichage.1,
+                        data_brute$Mode.d.affichage.2)
+
+df_mode_affichage <- data.frame(table(mode_affichage))
+
+
+affichees <- df_mode_affichage[df_mode_affichage$mode_affichage != 0 , ]
+
+kable(affichees,
+      col.names = c("Mode d'affichage", "Nombre de documents"))
+
+
+cat("Nombre total de documents affichés : " ,sum(affichees$Freq),"\n",
+round((sum(affichees$Freq)*100)/nrow(data_brute),2), "% de la base")
+```
+
+## Medias
+
+### Type de média
+
+::: panel-tabset
+```{r}
+#| results: asis
+
+for (i in 1:3){
+  
+  cat(paste0("### ", "Média ", i,
+             "\n\n"))
+  
+  temp_freq <- table(data_brute[ , paste0("Type.de.média.", i)]) |> data.frame()
+  
+  print(kable(temp_freq,
+              col.names = c("Type de média", "Fréquence")))
+  
+  cat("\n\n")
+}
+```
+:::
+
+### Couleur des medias
+
+```{r}
+couleurs <- c("bleu", "jaune", "lie de vin", "marron", "noir", "orange",
+              "rose", "rouge", "vert", "violet", "rouge fluo", "brun")
+
+liste_df <- list()
+nb_couleur <- c(7, 2, 2)
+
+for (i in 1:3){
+  # Sélection des colonnes pertinentes
+  colonnes <- c(paste0("Type.de.média.", i),
+                paste0("Couleur.", 1:nb_couleur[i], ".du.média.", i))
+  
+  temp_couleur_par_media <- data_brute[, colonnes]
+  
+  # On rassemble toutes les colonnes de couleur dans un seul vecteur
+  couleurs_media <- unlist(temp_couleur_par_media[, -1])  # on exclut Type.de.média
+  
+  couleurs_media <- as.character(couleurs_media)
+
+  # Filtrer les couleurs valides
+  couleurs_filtrees <- couleurs_media[couleurs_media %in% couleurs]
+  
+  # Compter les fréquences
+  temp_count <- as.data.frame(table(couleurs_filtrees))
+  names(temp_count) <- c("couleur", "frequence")
+  
+  # Stocker dans la liste
+  liste_df[[i]] <- temp_count
+}
+
+# Initialiser un tableau avec toutes les couleurs
+result <- data.frame(couleur = couleurs)
+
+# Ajouter les fréquences de chaque média
+for (i in 1:3) {
+  # Fusionner avec le tableau de référence
+  result <- merge(result, liste_df[[i]], by = "couleur", all.x = TRUE, sort = FALSE)
+  
+  # Renommer la colonne de fréquence ajoutée
+  names(result)[ncol(result)] <- paste0("frequence_media_", i)
+}
+
+# Remplacer les NA par 0 (pour les couleurs absentes)
+result[is.na(result)] <- 0
+
+
+kable(result)
+
+
+```
+
+## Couleur de surface
+
+```{r}
+couleur_surface <- data_brute$couleur.de.surface
+
+table_couleur_surface <- table(couleur_surface)
+
+kable(table_couleur_surface,
+      col.names = c("Couleur de surface", "Nombre d'affiche"))
+```
+
+## Remplois
+
+```{r}
+remplois <- data_brute[, c("id.unique",
+                           "Fonds",
+                           "affiche.issue.de.remploi")]
+```
+
+### Remplois (total)
+
+```{r}
+
+table_remplois <- data.frame(table(remplois$affiche.issue.de.remploi))
+
+                             
+kable(table_remplois,
+      col.names = c("Type de remplois", "Nombre de documents"))
+
+table_remplois <- table_remplois[table_remplois$Var1 != "non" , ]
+
+plot_ly(data = table_remplois,
+        x = ~Var1,
+        y = ~Freq,
+        color = ~Var1,
+        type = "bar") %>% 
+  layout(title = "Nombre d'affiche issue de remplois",
+         xaxis = list(title = "Type de remplois"),
+         yaxis = list(title = "Nombre de document"))
+
+```
+
+### Remplois (par fonds)
+
+::: panel-tabset
+```{r}
+#| results: asis
+
+for (i in seq_along(unique(remplois$Fonds))){
+  
+  temp_Fonds <- unique(remplois$Fonds)[i]
+  
+  cat(paste0("### ",
+             temp_Fonds,
+             "\n\n"
+             ))
+  
+  temp_remplois <- remplois[remplois$Fonds == temp_Fonds, ]
+  
+  temp_table_remplois <- data.frame(table(temp_remplois$affiche.issue.de.remploi))
+                             
+  cat(kable(temp_table_remplois,
+        col.names = c("Type de remplois", "Nombre de documents"),
+        caption = temp_Fonds),
+      sep = "\n")
+
+  temp_table_remplois <- subset(temp_table_remplois,
+                                temp_table_remplois$Var1 != "non")
+  
+  check_row <- nrow(temp_table_remplois)
+
+  if(check_row > 0){
+  
+    plot_ly(data = temp_table_remplois,
+            x = ~Var1,
+            y = ~Freq,
+            color = ~Var1,
+            type = "bar") %>% 
+      layout(title = paste0("Nombre d'affiche issue de remplois\n",temp_Fonds),
+             xaxis = list(title = "Type de remplois"),
+             yaxis = list(title = "Nombre de document")) %>%  print()
+  }
+  
+  cat("\n\n")
+  
+}
+```
+:::
+
+# Altérations
+
+## Altérations physico-chimiques
+
+::: panel-tabset
+### Encrassement
+
+```{r}
+
+table_ss_encrassement <- data.frame(fonds = unique(ss_encrassement$Fonds),
+                                    n_doc = tapply(ss_encrassement$Fonds,
+                                                        ss_encrassement$Fonds,
+                                                        length))
+
+table_avc_encrassement <- data.frame(fonds = unique(avc_encrassement$Fonds),
+                                    n_doc = tapply(avc_encrassement$Fonds,
+                                                        avc_encrassement$Fonds,
+                                                        length))
+
+plot_ly(table_ss_encrassement,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans encrassement (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_encrassement,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec encrassement (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_encrassement,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_encrassement$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans encrassement sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_encrassement,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_encrassement$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec encrassement sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+### Dépots
+
+```{r}
+
+table_ss_depot <- data.frame(fonds = unique(ss_depot$Fonds),
+                                    n_doc = tapply(ss_depot$Fonds,
+                                                        ss_depot$Fonds,
+                                                        length))
+
+table_avc_depot <- data.frame(fonds = unique(avc_depot$Fonds),
+                                    n_doc = tapply(avc_depot$Fonds,
+                                                        avc_depot$Fonds,
+                                                        length))
+
+plot_ly(table_ss_depot,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans dépôt (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_depot,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec dépôt (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_depot,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_depot$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans dépôt sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_depot,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_depot$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec dépôt sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+```
+
+### Taches
+
+```{r}
+
+table_ss_tache <- data.frame(fonds = unique(ss_tache$Fonds),
+                             n_doc = tapply(ss_tache$Fonds,
+                                            ss_tache$Fonds,
+                                            length))
+
+table_avc_tache <- data.frame(fonds = unique(avc_tache$Fonds),
+                              n_doc = tapply(avc_tache$Fonds,
+                                             avc_tache$Fonds,
+                                             length))
+
+plot_ly(table_ss_tache,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans tache (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_tache,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec tache (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_tache,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_tache$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans tache sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_tache,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_tache$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec tache sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+```
+
+### Auréoles
+
+```{r}
+
+table_ss_aureole <- data.frame(fonds = unique(ss_aureole$Fonds),
+                             n_doc = tapply(ss_aureole$Fonds,
+                                            ss_aureole$Fonds,
+                                            length))
+
+table_avc_aureole <- data.frame(fonds = unique(avc_aureole$Fonds),
+                              n_doc = tapply(avc_aureole$Fonds,
+                                             avc_aureole$Fonds,
+                                             length))
+
+plot_ly(table_ss_aureole,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans auréole (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_aureole,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec auréole (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_aureole,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_aureole$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans auréole sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_aureole,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_aureole$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec auréole sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+### Trace de colle
+
+```{r}
+
+table_ss_trace_colle <- data.frame(fonds = unique(ss_trace_colle$Fonds),
+                             n_doc = tapply(ss_trace_colle$Fonds,
+                                            ss_trace_colle$Fonds,
+                                            length))
+
+table_avc_trace_colle <- data.frame(fonds = unique(avc_trace_colle$Fonds),
+                              n_doc = tapply(avc_trace_colle$Fonds,
+                                             avc_trace_colle$Fonds,
+                                             length))
+
+plot_ly(table_ss_trace_colle,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans trace de colle (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_trace_colle,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec trace de colle (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_trace_colle,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_trace_colle$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans trace de colle sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_trace_colle,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_trace_colle$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec trace de colle sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+#### Croisement avec les autres types d'altérations
+
+```{r}
+
+avc_plis_involontaires <- data_brute[data_brute$plis.volontaires...involontaires
+                                     %in% c("involontaire",
+                                            "volontaire + involontaire") , 
+                                     c("id.unique",
+                                       "Fonds",
+                                       "plis.volontaires...involontaires")]
+
+colle_alteration_a_croiser <- list(avc_depot,
+                                   avc_tache,
+                                   avc_aureole,
+                                   avc_delamination,
+                                   avc_gondolement,
+                                   avc_lacunes,
+                                   avc_dechirure,
+                                   avc_plis_involontaires)
+
+ss_trace_colle_nb_croisement <- list()
+avc_trace_colle_nb_croisement <- list()
+
+for (i in 1:length(colle_alteration_a_croiser)){
+
+ss_trace_colle_nb_croisement[[i]] <- nrow(ss_trace_colle[ss_trace_colle$id.unique %in% colle_alteration_a_croiser[[i]]$id.unique , ])
+  
+avc_trace_colle_nb_croisement[[i]] <- nrow(avc_trace_colle[avc_trace_colle$id.unique %in% colle_alteration_a_croiser[[i]]$id.unique , ])
+  
+}
+
+croisement_colle <- data.frame(sans_trace_colle = do.call("rbind",
+                                                        ss_trace_colle_nb_croisement),
+                               avec_trace_colle = do.call("rbind",
+                                                         avc_trace_colle_nb_croisement)
+                               )
+
+row.names(croisement_colle) <- c("dépôt",
+                                 "tache",
+                                 "auréole",
+                                 "délamination",
+                                 "gondolement",
+                                 "lacune",
+                                 "déchirure",
+                                 "plis involontaires")
+
+kable(croisement_colle)
+
+croisement_long <- reshape2::melt(as.matrix(croisement_colle))
+colnames(croisement_long) <- c("Altération", "Trace de colle", "Nombre de documents")
+
+plot_ly(data = croisement_long,
+        x = ~`Trace de colle`,
+        y = ~Altération,
+        z = ~`Nombre de documents`,
+        type = "heatmap",
+        colors = colorRamp(c("white", "darkred"))) %>%
+  layout(title = "Croisement entre les traces de colle et les autres altérations",
+         xaxis = list(title = "Présence de trace de colle"),
+         yaxis = list(title = "Altération"),
+         margin = list(l = 100))
+
+```
+:::
+
+## Mécanique
+
+::::: panel-tabset
+### Lacunes
+
+```{r}
+
+table_ss_lacunes <- data.frame(fonds = unique(ss_lacunes$Fonds),
+                               n_doc = tapply(ss_lacunes$Fonds,
+                                              ss_lacunes$Fonds,
+                                              length))
+
+table_avc_lacunes <- data.frame(fonds = unique(avc_lacunes$Fonds),
+                                n_doc = tapply(avc_lacunes$Fonds,
+                                               avc_lacunes$Fonds,
+                                               length))
+
+plot_ly(table_ss_lacunes,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans lacune (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_lacunes,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec lacune (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_lacunes,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_lacunes$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans lacune sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_lacunes,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_lacunes$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec lacune sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+#### Situation et type de lacunes
+
+::: panel-tabset
+```{r}
+#| results: asis
+
+situ <- c("Dans le document",
+          "Sur les coins",
+            "Sur les bords")
+
+colonnes <- c("présence.de.lacunes.dans.le.document",
+              "présence.de.lacunes.dans.les.coins",
+              "présence.de.lacunes.dans.les.bords")
+
+for (i in 1:3){
+  
+  cat(paste0("### ",
+             situ[i],
+             "\n\n"))
+  
+  temp_table <- data_brute[ , c("Mode.d.affichage.1",
+                                colonnes[i])]
+  
+  print(kable(table(temp_table[ , 1],
+                    temp_table[, 2])))
+  
+  cat("\n\n")
+
+}
+
+```
+:::
+
+### Perforation
+
+```{r}
+
+table_ss_perforation <- data.frame(fonds = unique(ss_perforation$Fonds),
+                               n_doc = tapply(ss_perforation$Fonds,
+                                              ss_perforation$Fonds,
+                                              length))
+
+table_avc_perforation <- data.frame(fonds = unique(avc_perforation$Fonds),
+                                n_doc = tapply(avc_perforation$Fonds,
+                                               avc_perforation$Fonds,
+                                               length))
+
+plot_ly(table_ss_perforation,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans perforation (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_perforation,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec perforation (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_perforation,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_perforation$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans perforation sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_perforation,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_perforation$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec perforation sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+### plis
+
+```{r}
+
+table_ss_plis <- data.frame(fonds = unique(ss_plis$Fonds),
+                               n_doc = tapply(ss_plis$Fonds,
+                                              ss_plis$Fonds,
+                                              length))
+
+table_avc_plis <- data.frame(fonds = unique(avc_plis$Fonds),
+                                n_doc = tapply(avc_plis$Fonds,
+                                               avc_plis$Fonds,
+                                               length))
+
+plot_ly(table_ss_plis,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans plis (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_plis,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec plis (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_plis,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_plis$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans plis sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_plis,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_plis$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec plis sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+#### Situation et type de pli
+
+::: panel-tabset
+```{r}
+#| results: asis
+
+situ <- c("Dans le document",
+          "Sur les coins",
+          "Sur les bords")
+
+colonnes <- c("type.de.pli.1.dans.le.document",
+              "type.de.pli.1.dans.les.coins",
+              "type.de.pli.1.le.long.des.bords")
+
+
+for (i in 1:3){
+  
+  cat(paste0("### ",
+             situ[i],
+             "\n\n"))
+  
+  temp_table <- data_brute[ , c("Mode.d.affichage.1",
+                                colonnes[i])]
+  
+  print(kable(table(temp_table[ , 1],
+                    temp_table[, 2])))
+  
+  
+  
+  cat("\n\n")
+
+}
+
+```
+:::
+
+### Gondolement
+
+```{r}
+
+table_ss_gondolement <- data.frame(fonds = unique(ss_gondolement$Fonds),
+                               n_doc = tapply(ss_gondolement$Fonds,
+                                              ss_gondolement$Fonds,
+                                              length))
+
+table_avc_gondolement <- data.frame(fonds = unique(avc_gondolement$Fonds),
+                                n_doc = tapply(avc_gondolement$Fonds,
+                                               avc_gondolement$Fonds,
+                                               length))
+
+plot_ly(table_ss_gondolement,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans gondolement (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_gondolement,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec gondolement (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_gondolement,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_gondolement$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans gondolement sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_gondolement,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_gondolement$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec gondolement sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+### Délamination
+
+```{r}
+
+table_ss_delamination <- data.frame(fonds = unique(ss_delamination$Fonds),
+                               n_doc = tapply(ss_delamination$Fonds,
+                                              ss_delamination$Fonds,
+                                              length))
+
+table_avc_delamination <- data.frame(fonds = unique(avc_delamination$Fonds),
+                                n_doc = tapply(avc_delamination$Fonds,
+                                               avc_delamination$Fonds,
+                                               length))
+
+plot_ly(table_ss_delamination,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans delamination (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_delamination,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec delamination (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_delamination,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_delamination$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans delamination sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_delamination,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_delamination$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec delamination sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+### Coupures
+
+```{r}
+
+table_ss_coupure <- data.frame(fonds = unique(ss_coupure$Fonds),
+                               n_doc = tapply(ss_coupure$Fonds,
+                                              ss_coupure$Fonds,
+                                              length))
+
+table_avc_coupure <- data.frame(fonds = unique(avc_coupure$Fonds),
+                                n_doc = tapply(avc_coupure$Fonds,
+                                               avc_coupure$Fonds,
+                                               length))
+
+plot_ly(table_ss_coupure,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans coupure (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_coupure,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec coupure (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documents du fonds
+
+plot_ly(table_ss_coupure,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_coupure$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans coupure sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_coupure,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_coupure$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec coupure sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+### Déchirures
+
+```{r}
+
+table_ss_dechirure <- data.frame(fonds = unique(ss_dechirure$Fonds),
+                               n_doc = tapply(ss_dechirure$Fonds,
+                                              ss_dechirure$Fonds,
+                                              length))
+
+table_avc_dechirure <- data.frame(fonds = unique(avc_dechirure$Fonds),
+                                n_doc = tapply(avc_dechirure$Fonds,
+                                               avc_dechirure$Fonds,
+                                               length))
+
+plot_ly(table_ss_dechirure,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans déchirure (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_dechirure,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec déchirure (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documents du fonds
+
+plot_ly(table_ss_dechirure,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_dechirure$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans déchirure sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_dechirure,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_dechirure$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec déchirure sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+:::::
+
+## Etat du tracé
+
+::: panel-tabset
+### Abrasion
+
+```{r}
+
+table_ss_abrasion <- data.frame(fonds = unique(ss_abrasion$Fonds),
+                               n_doc = tapply(ss_abrasion$Fonds,
+                                              ss_abrasion$Fonds,
+                                              length))
+
+table_avc_abrasion <- data.frame(fonds = unique(avc_abrasion$Fonds),
+                                n_doc = tapply(avc_abrasion$Fonds,
+                                               avc_abrasion$Fonds,
+                                               length))
+
+plot_ly(table_ss_abrasion,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans abrasion (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_abrasion,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec abrasion (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_abrasion,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_abrasion$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans abrasion sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_abrasion,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_abrasion$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec abrasion sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+
+### Migration d'encre
+
+```{r}
+
+table_ss_fuse <- data.frame(fonds = unique(ss_fuse$Fonds),
+                               n_doc = tapply(ss_fuse$Fonds,
+                                              ss_fuse$Fonds,
+                                              length))
+
+table_avc_fuse <- data.frame(fonds = unique(avc_fuse$Fonds),
+                                n_doc = tapply(avc_fuse$Fonds,
+                                               avc_fuse$Fonds,
+                                               length))
+
+plot_ly(table_ss_fuse,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents sans migration d'encre (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+plot_ly(table_avc_fuse,
+        x = ~fonds,
+        y = ~n_doc,
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Nombre de documents avec migration d'encre (stock)",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Nombre de documents"))
+
+
+# altération / Nombre de documentss du fonds
+
+plot_ly(table_ss_fuse,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% ss_fuse$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents sans migration d'encre sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+plot_ly(table_avc_fuse,
+        x = ~fonds,
+        y = ~n_doc / n_doc_par_fonds[n_doc_par_fonds$Fonds %in% avc_fuse$Fonds , "nb_doc"],
+        color = ~fonds,
+        type = "bar") %>% 
+  layout(title = "Part de documents avec migration d'encre sur l'ensemble des affiches du fonds",
+         xaxis = list(title = "Fonds"),
+         yaxis = list(title = "Part de documents"))
+
+```
+:::
+
+## Altération selon le mode d'affichage
+
+### Mode d'affichage (Total)
+
+```{r}
+### Table de fréquence mode d'affichage ~ altération (global)
+
+mode_affichage_alteration <- data_brute[ , c("id.unique",
+                                             "Mode.d.affichage.1",
+                                             "Mode.d.affichage.2",
+                                             "Fonds")]
+
+mode_affichage <- unique(mode_affichage_alteration$Mode.d.affichage.1)
+
+affichage_alteration_a_croiser <- list(avc_depot,
+                                 avc_tache,
+                                 avc_aureole,
+                                 avc_delamination,
+                                 avc_gondolement,
+                                 avc_lacunes,
+                                 avc_dechirure,
+                                 avc_plis_involontaires)
+
+test <- data.frame(table(data_brute$Fonds,
+      data_brute$Traces.de.colle,
+      data_brute$auréole))
+
+croisement_mode_alteration <- list()
+
+for (i_mode in mode_affichage){
+  
+    temp_mode <- c(mode_affichage_alteration[mode_affichage_alteration$Mode.d.affichage.1 == i_mode , "id.unique"],
+                       mode_affichage_alteration[mode_affichage_alteration$Mode.d.affichage.2 == i_mode
+                                  & mode_affichage_alteration$Mode.d.affichage.2 != "0" , "id.unique"]) 
+  temp_croisement <- list()
+
+  for (i in 1:length(affichage_alteration_a_croiser)){
+  
+  temp_croisement[[i]] <- sum(temp_mode %in% affichage_alteration_a_croiser[[i]]$id.unique)
+    
+  }
+  croisement_mode_alteration <- cbind(croisement_mode_alteration,
+                                      temp_croisement)
+}
+
+croisement_mode_alteration <- data.frame(croisement_mode_alteration)
+
+
+row.names(croisement_mode_alteration) <- c("dépôt",
+                                           "tache",
+                                           "auréole",
+                                           "délamination",
+                                           "gondolement",
+                                           "lacune",
+                                           "déchirure",
+                                           "plis involontaires")
+
+colnames(croisement_mode_alteration) <- mode_affichage
+colnames(croisement_mode_alteration)[colnames(croisement_mode_alteration) == 0] <- "sans affichage"
+
+kable(croisement_mode_alteration)
+
+
+
+### Puis par fonds
+```
+
+### Mode d'affichage par fonds
+
+::: panel-tabset
+```{r results='asis'}
+
+fonds <- unique(data_brute$Fonds)
+
+for (f in fonds) {
+  cat(paste0("### ", f, "\n\n"))
+  
+  temp_fonds <- data_brute[data_brute$Fonds == f, ]
+  croisement_mode_alteration <- list()
+
+  for (i_mode in mode_affichage) {
+    temp_mode <- c(temp_fonds[temp_fonds$Mode.d.affichage.1 == i_mode , "id.unique"],
+                       temp_fonds[temp_fonds$Mode.d.affichage.2 == i_mode
+                                  & temp_fonds$Mode.d.affichage.2 != "0" , "id.unique"])
+    temp_croisement <- list()
+
+    for (i in seq_along(affichage_alteration_a_croiser)) {
+      temp_croisement[[i]] <- sum(temp_mode %in% affichage_alteration_a_croiser[[i]]$id.unique)
+    }
+
+    croisement_mode_alteration <- cbind(croisement_mode_alteration, temp_croisement)
+  }
+
+  croisement_mode_alteration <- data.frame(croisement_mode_alteration)
+
+  row.names(croisement_mode_alteration) <- c("dépôt",
+                                             "tache",
+                                             "auréole",
+                                             "délamination",
+                                             "gondolement",
+                                             "lacune",
+                                             "déchirure",
+                                             "plis involontaires")
+
+  colnames(croisement_mode_alteration) <- mode_affichage
+  colnames(croisement_mode_alteration)[colnames(croisement_mode_alteration) == 0] <- "sans affichage"
+
+  print(kable(croisement_mode_alteration, 
+                      caption = paste("Croisement pour le fonds:", f)))
+  
+  cat("\n\n")
+}
+
+
+```
+:::
+
+## Altération selon le type de média principal
+
+```{r}
+media_alteration <- data_brute[ , c("Type.de.média.1",
+                                  "qualification.de.la.perte.de.cohésion..adhésion")]
+kable(t(table(media_alteration$Type.de.média.1,
+      media_alteration$qualification.de.la.perte.de.cohésion..adhésion)))
+
+```
+
+```{r}
+sessionInfo()
+```
