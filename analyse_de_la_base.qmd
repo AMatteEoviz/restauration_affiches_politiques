@@ -15,7 +15,7 @@ format:
     editor: visual
 ---
 
-Cette synthèse présentes les résultats de l’analyse visuelle de 309 affiches conservées entre les fonds des Archives nationales de France à Paris et la bibliothèque du Trinity College à Dublin. Cette étude a pour objectif l’examen des caractéristiques techniques et des altérations des affiches observées afin de déterminer la possible corrélation entre typologie d’affiche, mode d’affichage et altérations en présence.
+Cette synthèse présente les résultats de l’analyse visuelle de 309 affiches conservées entre les fonds des Archives nationales de France à Paris et la bibliothèque du Trinity College à Dublin. Cette étude a pour objectif l’examen des caractéristiques techniques et des altérations des affiches observées afin de déterminer la possible corrélation entre typologie d’affiche, mode d’affichage et altérations en présence.
 
 ```{r}
 #| label: init algo
