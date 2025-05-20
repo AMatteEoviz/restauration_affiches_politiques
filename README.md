@@ -10,5 +10,5 @@ Les deux principales documents d'études sont :
 </ul>
 
 Pour visionner analyse_de_la_base.html, il faut le télécharger puis l'ouvrir avec un moteur de recherche.
-Le notebook est également disponible en ligne [ici]("https://rpubs.com/AMatteEoviz/restauration_affiches_politiques").
+Le notebook est également disponible en ligne [ici](https://rpubs.com/AMatteEoviz/restauration_affiches_politiques).
 
