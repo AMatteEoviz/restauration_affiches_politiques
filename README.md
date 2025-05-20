@@ -4,9 +4,9 @@ Résumé statistique et analyses uni et bi varié de la base "La restauration d�
 Ce réportoire contient les annexes du mémoire de seconde année de master d'Eli Pittion, "La restauration d’affiches politiques du XXe siècle. Comment conserver les marques d’usage en contexte archivistique : entre témoignage historique et enjeux de stabilisation." (Pittion, 2025). 
 
 Les deux principales documents d'études sont :
-<div>
-  * tableau_synthese_FINAL.xlsx
-  * analyse_de_la_base.html
-</div>
+<ul>
+  <li>tableau_synthese_FINAL.xlsx</li>
+  <li>analyse_de_la_base.html</li>
+</ul>
 
-Pour visionner analyse_de_la_base.html, téléchargez le markdown ici.
+Pour visionner analyse_de_la_base.html, il faut le télécharger puis l'ouvrir avec un moteur de recherche.
