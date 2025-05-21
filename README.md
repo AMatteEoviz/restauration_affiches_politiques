@@ -6,7 +6,7 @@ Ce répertoire contient les annexes du mémoire de seconde année de master "La 
 Les deux principaux documents d'études sont :
 <ul>
   <li>Un tableau de synthèse de la base : tableau_synthese_FINAL.xlsx</li>
-  <li>Un notebook résumant les principales explorations statistiques : analyse_de_la_base.html</li>
+  <li>Un markdown résumant les principales explorations statistiques : analyse_de_la_base.html</li>
 </ul>
 
 Pour visionner analyse_de_la_base.html, il faut le télécharger puis l'ouvrir avec un moteur de recherche.
