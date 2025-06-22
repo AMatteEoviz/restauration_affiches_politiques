@@ -3,7 +3,7 @@ Résumé statistique et analyses uni et bi varié de la base "La restauration d�
 
 Ce répertoire contient les annexes du mémoire de seconde année de master "La restauration d’affiches politiques du XXe siècle. Comment conserver les marques d’usage en contexte archivistique : entre témoignage historique et enjeux de stabilisation." (Pittion, 2025). 
 
-Les deux principaux documents d'études sont :
+Les principaux documents d'études sont :
 <ul>
   <li>Un tableau de synthèse de la base : tableau_synthese_FINAL.xlsx</li>
   <li>Un markdown résumant les principales explorations statistiques : analyse_de_la_base.html</li>
