@@ -13,3 +13,5 @@ Les principaux documents d'études sont :
 Pour visionner analyse_de_la_base.html, il faut le télécharger puis l'ouvrir avec un moteur de recherche.
 Le notebook est également disponible en ligne [ici](https://rpubs.com/AMatteEoviz/restauration_affiches_politiques).
 
+Crédits externes :
+Fonction de zoom dans la visualisation de la stratigraphie empruntée à W3 School.([lien vers la méthode](https://www.w3schools.com/howto/howto_js_image_zoom.asp))
