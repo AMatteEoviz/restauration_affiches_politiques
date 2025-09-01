@@ -7,6 +7,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 // https://vite.dev/config/
 export default defineConfig({
   base: '/restauration_affiches_politiques/',
+  build: {
+    outDir: 'dist',
+  },
   plugins: [
     vue(),
     vueDevTools(),
