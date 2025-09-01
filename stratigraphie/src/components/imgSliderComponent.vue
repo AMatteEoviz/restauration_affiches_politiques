@@ -12,7 +12,7 @@ import { imageZoom } from '../utils/zoom'
 
 const store = useCounterStore();
 const imgURI = computed(() =>
-    store.isolatedPathes[12 - store.currentIndex]
+    store.stratifiedPathes[12 - store.currentIndex]
 )
 
 onMounted(() =>
