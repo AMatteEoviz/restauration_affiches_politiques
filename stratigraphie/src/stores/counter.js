@@ -25,8 +25,8 @@ export const useCounterStore = defineStore('counter', {
   actions: {
     loadPathes(imgIndex) {
 
-    this.isolatedPathes[imgIndex - 1] = `../public/img/calque_${imgIndex}.webp`
-    this.stratifiedPathes[imgIndex - 1] = `../public/img/strat_${imgIndex}.webp`
+    this.isolatedPathes[imgIndex - 1] = `./public/img/calque_${imgIndex}.webp`
+    this.stratifiedPathes[imgIndex - 1] = `./public/img/strat_${imgIndex}.webp`
 
     }
   }
